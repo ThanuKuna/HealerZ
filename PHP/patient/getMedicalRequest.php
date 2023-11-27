@@ -31,13 +31,23 @@ try {
             // Fetch the filtered data as an associative array
             $filteredData = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-            // Check if any data was found for the given Patient_ID
             if ($filteredData) {
-                // Return the filtered data as JSON
                 header('Content-Type: application/json');
+
+                $imagePath = $filteredData[0]['Profile']; // Assume Profile contains the relative image path
+
+                if (file_exists($imagePath)) {
+                    $imageData = file_get_contents($imagePath);
+                    $imageType = mime_content_type($imagePath);
+
+                    $base64 = base64_encode($imageData);
+
+                    $filteredData[0]['Profile'] = $base64;
+                    $filteredData[0]['ProfileType'] = $imageType;
+                }
+
                 echo json_encode($filteredData);
             } else {
-                // If no data found for the given Patient_ID, return an error message or appropriate response
                 echo json_encode(['message' => 'Patient not found']);
             }
         } else {

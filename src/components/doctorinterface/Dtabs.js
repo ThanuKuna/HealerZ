@@ -7,7 +7,7 @@ import MedicalPage from './pages/MedicalPage.js';
 export default function Dtabs ( props )
 {
   const { selectedId } = props;
-  const [id, setId] = useState(false);
+  const [ id, setId ] = useState( false );
   useEffect( () =>
   {
     const fetchData = async () =>
@@ -16,7 +16,7 @@ export default function Dtabs ( props )
       {
         if ( selectedId )
         {
-          const response = await axios.post( 'http://localhost/HealerZ/PHP/doctor/getPatient.php', {
+          const response = await axios.post( 'http://localhost/HealerZ/PHP/patient/getPatient.php', {
             patient_ID: selectedId,
           } );
           setId( response.data[ 0 ] );
@@ -35,8 +35,6 @@ export default function Dtabs ( props )
 
     fetchData();
   }, [ selectedId ] );
-
-
 
   return (
     <>

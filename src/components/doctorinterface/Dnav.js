@@ -8,18 +8,30 @@ import { useNavigate } from "react-router-dom";
 import Dsettings from "./Dsettings";
 import MedRequestModal from "./utilites/MedRequestModal";
 import {Offcanvas} from 'react-bootstrap';
+import default_dp from "../../assets/avatar.svg";
 
 
 export default function Dnav() {
   const navigate = useNavigate();
 
   const [records, setRecords] = useState([]);
-  const [selectedData, setSelectedData] = useState(null);
+  const [selectedData, setSelectedData] = useState();
 
   const fetchData = useCallback(async () => {
     try {
-      const response = await axios.post('http://localhost/HealerZ/PHP/doctor/loadNotification.php');
-      setRecords(response.data);
+      const response = await axios.post('http://localhost/HealerZ/PHP/patient/loadNotification.php');
+      const updatedRecords = response.data.map( record =>
+        {
+          if ( record.Profile && record.ProfileType )
+          {
+            const image = new Image();
+            image.src = `data:${ record.ProfileType };base64,${ record.Profile }`;
+            return { ...record, profilepic: image.src };
+          }
+          return { ...record, profilepic: null };
+        } );
+        setRecords( updatedRecords );
+        // console.log(records);
     } catch (error) {
       console.error('Error fetching data:', error);
     }
@@ -52,6 +64,43 @@ export default function Dnav() {
 
   const handleClose = () => setShow(false);
   const handleShow = () => setShow(true);
+  const [profilepic, setprofilepic] = useState(default_dp);
+  const [userdata, setUserData] = useState([]);
+  useEffect(() => {
+    fetchData2();
+  }, []);
+
+  const fetchData2 = async () => {
+    try {
+      const response = await axios.get(
+        "http://localhost/Healerz/PHP/Inventory/settings/getemployeeData.php",
+        { params: { employeeID: sessionStorage.getItem("employeeID") } }
+      );
+
+      console.log(response.data);
+      if (Array.isArray(response.data) && response.data.length > 0) {
+        setUserData(response.data);
+      } else {
+        console.error("No data found or invalid response structure");
+      }
+      if (response.data[0].Profile) {
+        convertBase64ProfileImage(
+          response.data[0].Profile,
+          response.data[0].ProfileType
+        );
+      }
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+  };
+
+  const convertBase64ProfileImage = (base64, type) => {
+    const image = new Image();
+    image.src = `data:${type};base64,${base64}`;
+    image.onload = () => {
+      setprofilepic(image.src);
+    };
+  };
 
   return (
     <>
@@ -91,7 +140,7 @@ export default function Dnav() {
                 aria-expanded="false"
               >
                 <img
-                  src="https://source.unsplash.com/random/1"
+                 src={profilepic}
                   alt="avatar"
                   height="38px"
                   width="38px"
@@ -134,7 +183,7 @@ export default function Dnav() {
                 key={record.MedicalRequest_ID}
                 type="button"
                 className='icon-hover rounded p-2 d-flex align-items-center justify-content-between m-3 my-2'
-                onClick={() => openModal(record.MedicalRequest_ID)}
+                onClick={() => openModal( { 'Request_ID': record.MedicalRequest_ID, 'patient_ID': record.Patient_ID, 'Doctor_ID': sessionStorage.getItem( "employeeID" ) })}
               >
                 <Notification record={record} />
               </div>
